@@ -26,5 +26,16 @@ def predict():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/echo_message', methods=['POST','GET'])
+def echo_message():
+    try:
+        data = request.get_json()
+        message = data['message']  # Extract the message from the JSON
+
+        return jsonify({'received_message': message})  # Send it back
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 if __name__ == '__main__':
     app.run()
