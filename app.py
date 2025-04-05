@@ -30,7 +30,7 @@ def predict():
 def echo_message():
     try:
         data = request.get_json()
-        message = data['message']  # Extract the message from the JSON
+        message = 'Nalla Vishesham!!!!'  # Extract the message from the JSON
 
         return jsonify({'received_message': message})  # Send it back
 
