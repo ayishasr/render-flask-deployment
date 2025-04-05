@@ -87,9 +87,9 @@ def echo_message():
         gesture = read_gesture()
         print(gesture)
         if gesture is None:
-            return jsonify({'gesture': "Predicting..."})
+            return jsonify({'received_message': "Predicting..."})
         else:
-            return jsonify({'gesture': gesture})
+            return jsonify({'received_message': gesture})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
