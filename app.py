@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+import redis
 import os
 import joblib
 import tensorflow.lite as tflite
@@ -6,7 +7,10 @@ import numpy as np
 
 app = Flask(__name__)
 
-latest_prediction = None
+redis_host = os.environ.get('REDIS_HOST')
+redis_port = os.environ.get('REDIS_PORT')
+redis_password = os.environ.get('REDIS_PASSWORD')
+
 NUM_TIMESTEPS = 30
 NUM_FEATURES = 11
 scaler_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models/scaler.joblib')
@@ -28,6 +32,17 @@ client_buffers = {}
 
 classes = ['B', 'C', 'D', 'GOOD MORNING', "MA'AM", 'SIR']
 
+if redis_host and redis_port:
+    redis_client = redis.Redis(
+        host=redis_host,
+        port=int(redis_port),
+        password=redis_password,
+        decode_responses=True # Important for string handling
+    )
+else:
+    print("Redis environment variables not set. Using localhost for development.")
+    redis_client = redis.Redis(host='localhost', port=6379, decode_responses=True) #fallback for local testing.
+
 @app.route('/', methods=['GET'])
 def home():
     return "<h1>Welcome to the Flask Server</h1>"
@@ -35,8 +50,6 @@ def home():
 @app.route('/predict', methods=['POST','GET'])
 def predict():
     try:
-        global latest_prediction
-
         data = request.get_json()  # Get JSON data from the request
         sensor_buffer = data['sensor_values']
 
@@ -59,8 +72,9 @@ def predict():
         predicted_class = np.argmax(output_data)
         gesture = classes[predicted_class]
 
-        latest_prediction = gesture
         print(f"Predicted Gesture: {gesture}")
+
+        redis_client.set('gesture', gesture) #save to redis.
 
         # Clear buffer for next gesture
         sensor_buffer = []
@@ -71,13 +85,13 @@ def predict():
 
 @app.route('/echo_message', methods=['POST','GET'])
 def echo_message():
-    global latest_prediction
-    print(latest_prediction)
     try:
-        if latest_prediction is None:
-            return jsonify({"received_message": "No prediction yet"})
+        gesture = redis_client.get('gesture')
+        if gesture:
+            gesture = gesture.decode('utf-8')
         else:
-            return jsonify({"received_message": latest_prediction})
+            gesture = 'No gesture found'
+        return jsonify({'received_message': gesture})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
