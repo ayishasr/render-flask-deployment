@@ -69,7 +69,7 @@ def predict():
 def echo_message():
     try:
         gesture = getattr(g, 'gesture', 'No gesture found')# Extract the message from the JSON
-
+        print(gesture)
         return jsonify({'received_message': gesture})  # Send it back
 
     except Exception as e:
