@@ -1,7 +1,27 @@
 from flask import Flask, jsonify, request
 import os
+import joblib
+import tensorflow.lite as tflite
+import numpy as np
 
 app = Flask(__name__)
+
+NUM_TIMESTEPS = 30
+NUM_FEATURES = 11
+SCALER_PATH = 'models\scaler1.pkl'
+MODEL_PATH = 'models\SMART_GLOVEmodel.tflite'
+
+scaler = joblib.load(SCALER_PATH)
+
+interpreter = tflite.Interpreter(model_path=MODEL_PATH)
+interpreter.allocate_tensors()
+
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+
+client_buffers = {}
+
+classes = ['B', 'C', 'D', 'GOOD MORNING', "MA'AM", 'SIR']
 
 @app.route('/', methods=['GET'])
 def home():
@@ -11,17 +31,31 @@ def home():
 def predict():
     try:
         data = request.get_json()  # Get JSON data from the request
-        message = data.get('message')  # Extract the 'message' from the JSON
+        sensor_buffer = data['sensor_values']
 
-        if message:
-            print(f"Received message: {message}")  # Print the message to the server's console
+        print("Obtained 30 timesteps, making prediction...")
+        print(sensor_buffer)
 
-            # Your prediction logic here (replace with your actual code)
-            prediction = f"Prediction for '{message}' is: Some Result"
+        # Convert to NumPy array and apply StandardScaler
+        input_data = np.array(sensor_buffer, dtype=np.float32)
+        input_data = (input_data - scaler.mean_) / scaler.scale_
 
-            return jsonify({'prediction': prediction})
-        else:
-            return jsonify({'error': 'Message not found in request'}), 400 #return error if message is not found.
+        # Reshape for model input
+        input_data = input_data.reshape(1, NUM_TIMESTEPS, NUM_FEATURES)
+
+        # Run inference
+        interpreter.set_tensor(input_details[0]['index'], input_data.astype(np.float32))
+        interpreter.invoke()
+        output_data = interpreter.get_tensor(output_details[0]['index'])
+
+        # Get predicted class
+        predicted_class = np.argmax(output_data)
+        gesture = classes[predicted_class]
+
+        print(f"Predicted Gesture: {gesture}")
+
+        # Clear buffer for next gesture
+        sensor_buffer = []
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
