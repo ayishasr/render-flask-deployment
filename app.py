@@ -72,6 +72,7 @@ def predict():
 @app.route('/echo_message', methods=['POST','GET'])
 def echo_message():
     global latest_prediction
+    print(latest_prediction)
     try:
         if latest_prediction is None:
             return jsonify({"received_message": "No prediction yet"})
