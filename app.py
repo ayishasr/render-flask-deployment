@@ -1,6 +1,5 @@
 from flask import Flask, jsonify, request
 import os
-import pickle
 import joblib
 import tensorflow.lite as tflite
 import numpy as np
@@ -9,11 +8,14 @@ app = Flask(__name__)
 
 NUM_TIMESTEPS = 30
 NUM_FEATURES = 11
-scaler_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models/scaler1.pkl')
+scaler_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models/scaler.joblib')
 model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models/SMART_GLOVEmodel.tflite')
 
-with open(scaler_path, 'rb') as f:
-        scaler = pickle.load(f)
+try:
+    scaler = joblib.load(scaler_path)
+except Exception as e:
+    print(f"Error loading scaler: {e}")
+    scaler = None 
 
 interpreter = tflite.Interpreter(model_path=model_path)
 interpreter.allocate_tensors()
