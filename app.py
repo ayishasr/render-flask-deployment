@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, g
+from flask import Flask, jsonify, request
 import os
 import joblib
 import tensorflow.lite as tflite
@@ -6,6 +6,7 @@ import numpy as np
 
 app = Flask(__name__)
 
+latest_prediction = None
 NUM_TIMESTEPS = 30
 NUM_FEATURES = 11
 scaler_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models/scaler.joblib')
@@ -34,6 +35,8 @@ def home():
 @app.route('/predict', methods=['POST','GET'])
 def predict():
     try:
+        global latest_prediction
+
         data = request.get_json()  # Get JSON data from the request
         sensor_buffer = data['sensor_values']
 
@@ -54,24 +57,27 @@ def predict():
 
         # Get predicted class
         predicted_class = np.argmax(output_data)
-        g.gesture = classes[predicted_class]
+        gesture = classes[predicted_class]
 
-        print(f"Predicted Gesture: {g.gesture}")
+        print(f"Predicted Gesture: {gesture}")
+
+        latest_prediction = gesture
 
         # Clear buffer for next gesture
         sensor_buffer = []
 
-        return jsonify({'prediction': g.gesture})
+        return jsonify({'prediction': gesture})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/echo_message', methods=['POST','GET'])
 def echo_message():
+    global latest_prediction
     try:
-        gesture = getattr(g, 'gesture', 'No gesture found')# Extract the message from the JSON
-        print(gesture)
-        return jsonify({'received_message': gesture})  # Send it back
-
+        if latest_prediction is None:
+            return jsonify({"received_message": "No prediction yet"})
+        else:
+            return jsonify({"received_message": latest_prediction})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
