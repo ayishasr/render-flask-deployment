@@ -59,9 +59,8 @@ def predict():
         predicted_class = np.argmax(output_data)
         gesture = classes[predicted_class]
 
-        print(f"Predicted Gesture: {gesture}")
-
         latest_prediction = gesture
+        print(f"Predicted Gesture: {gesture}")
 
         # Clear buffer for next gesture
         sensor_buffer = []
