@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-import redis
+import json
 import os
 import joblib
 import tensorflow.lite as tflite
@@ -7,14 +7,22 @@ import numpy as np
 
 app = Flask(__name__)
 
-redis_host = os.environ.get('REDIS_HOST')
-redis_port = os.environ.get('REDIS_PORT')
-redis_password = os.environ.get('REDIS_PASSWORD')
-
+JSON_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'shared_data.json')
 NUM_TIMESTEPS = 30
 NUM_FEATURES = 11
 scaler_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models/scaler.joblib')
 model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models/SMART_GLOVEmodel.tflite')
+
+def read_gesture():
+    if not os.path.exists(JSON_FILE):
+        return None
+    with open(JSON_FILE, 'r') as f:
+        data = json.load(f)
+        return data.get('gesture', None)
+
+def write_gesture(gesture):
+    with open(JSON_FILE, 'w') as f:
+        json.dump({'gesture': gesture}, f)
 
 try:
     scaler = joblib.load(scaler_path)
@@ -31,17 +39,6 @@ output_details = interpreter.get_output_details()
 client_buffers = {}
 
 classes = ['B', 'C', 'D', 'GOOD MORNING', "MA'AM", 'SIR']
-
-if redis_host and redis_port:
-    redis_client = redis.Redis(
-        host=redis_host,
-        port=int(redis_port),
-        password=redis_password,
-        decode_responses=True # Important for string handling
-    )
-else:
-    print("Redis environment variables not set. Using localhost for development.")
-    redis_client = redis.Redis(host='localhost', port=6379, decode_responses=True) #fallback for local testing.
 
 @app.route('/', methods=['GET'])
 def home():
@@ -73,12 +70,11 @@ def predict():
         gesture = classes[predicted_class]
 
         print(f"Predicted Gesture: {gesture}")
-
-        redis_client.set('gesture', gesture) #save to redis.
+        
+        write_gesture(gesture)
 
         # Clear buffer for next gesture
         sensor_buffer = []
-
         return jsonify({'prediction': gesture})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -86,12 +82,11 @@ def predict():
 @app.route('/echo_message', methods=['POST','GET'])
 def echo_message():
     try:
-        gesture = redis_client.get('gesture')
-        if gesture:
-            gesture = gesture.decode('utf-8')
+        gesture = read_gesture()
+        if gesture is None:
+            return jsonify({'gesture': "Predicting..."})
         else:
-            gesture = 'No gesture found'
-        return jsonify({'received_message': gesture})
+            return jsonify({'gesture': gesture})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
