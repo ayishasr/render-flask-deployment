@@ -61,6 +61,7 @@ def predict():
         # Clear buffer for next gesture
         sensor_buffer = []
 
+        return jsonify({'prediction': gesture})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
