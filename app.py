@@ -53,7 +53,6 @@ def predict():
         sensor_buffer = data['sensor_values']
 
         print("Obtained 30 timesteps, making prediction...")
-        print(sensor_buffer)
 
         # Convert to NumPy array and apply StandardScaler
         input_data = np.array(sensor_buffer, dtype=np.float32)
@@ -85,7 +84,6 @@ def predict():
 def echo_message():
     try:
         gesture = read_gesture()
-        print(gesture)
         if gesture is None:
             return jsonify({'received_message': "Predicting..."})
         else:
