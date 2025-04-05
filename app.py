@@ -17,10 +17,12 @@ def read_gesture():
     if not os.path.exists(JSON_FILE):
         return None
     with open(JSON_FILE, 'r') as f:
+        print("Reading gesture from JSON file...")
         data = json.load(f)
         return data.get('gesture', None)
 
 def write_gesture(gesture):
+    print("Writing gesture to JSON file...")
     with open(JSON_FILE, 'w') as f:
         json.dump({'gesture': gesture}, f)
 
@@ -83,6 +85,7 @@ def predict():
 def echo_message():
     try:
         gesture = read_gesture()
+        print(gesture)
         if gesture is None:
             return jsonify({'gesture': "Predicting..."})
         else:
