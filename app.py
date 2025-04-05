@@ -7,7 +7,7 @@ app = Flask(__name__)
 def home():
     return "<h1>Welcome to the Flask Server</h1>"
 
-@app.route('/predict', methods=['POST'])
+@app.route('/predict', methods=['POST','GET'])
 def predict():
     try:
         data = request.get_json()  # Get JSON data from the request
@@ -28,4 +28,3 @@ def predict():
 
 if __name__ == '__main__':
     app.run()
-    
