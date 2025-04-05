@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, g
 import os
 import joblib
 import tensorflow.lite as tflite
@@ -54,24 +54,23 @@ def predict():
 
         # Get predicted class
         predicted_class = np.argmax(output_data)
-        gesture = classes[predicted_class]
+        g.gesture = classes[predicted_class]
 
-        print(f"Predicted Gesture: {gesture}")
+        print(f"Predicted Gesture: {g.gesture}")
 
         # Clear buffer for next gesture
         sensor_buffer = []
 
-        return jsonify({'prediction': gesture})
+        return jsonify({'prediction': g.gesture})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/echo_message', methods=['POST','GET'])
 def echo_message():
     try:
-        data = request.get_json()
-        message = 'Nalla Vishesham!!!!'  # Extract the message from the JSON
+        gesture = getattr(g, 'gesture', 'No gesture found')# Extract the message from the JSON
 
-        return jsonify({'received_message': message})  # Send it back
+        return jsonify({'received_message': gesture})  # Send it back
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
