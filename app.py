@@ -10,8 +10,8 @@ app = Flask(__name__)
 JSON_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'shared_data.json')
 NUM_TIMESTEPS = 30
 NUM_FEATURES = 11
-scaler_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models/scaler.joblib')
-model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models/SMART_GLOVEmodel.tflite')
+scaler_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models/scaler2.joblib')
+model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models/SMART_GLOVEmodelnew1.tflite')
 
 def read_gesture():
     if not os.path.exists(JSON_FILE):
@@ -40,7 +40,7 @@ output_details = interpreter.get_output_details()
 
 client_buffers = {}
 
-classes = ['B', 'C', 'D', 'GOOD MORNING', "MA'AM", 'SIR']
+classes = ['A', 'B', 'C', 'D', 'E', 'GOOD MORNING', 'HELLO', 'HUNGRY', 'I LOVE YOU',"MA'AM", 'PLEASE','THANK YOU','WATER']
 
 @app.route('/', methods=['GET'])
 def home():
